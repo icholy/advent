@@ -14,9 +14,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer f.Close()
-
 	var sum int64
-
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		x, err := strconv.ParseInt(scanner.Text(), 10, 64)
@@ -25,6 +23,8 @@ func main() {
 		}
 		sum += x
 	}
-
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("Sum: %d\n", sum)
 }
