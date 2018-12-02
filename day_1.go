@@ -15,15 +15,15 @@ func main() {
 	}
 	defer f.Close()
 	var sum int64
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		x, err := strconv.ParseInt(scanner.Text(), 10, 64)
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		x, err := strconv.ParseInt(sc.Text(), 10, 64)
 		if err != nil {
 			log.Fatal(err)
 		}
 		sum += x
 	}
-	if err := scanner.Err(); err != nil {
+	if err := sc.Err(); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Sum: %d\n", sum)
