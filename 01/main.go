@@ -1,4 +1,4 @@
-package main
+2package main
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	f, err := os.Open("day_2.input")
+	f, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,12 +31,12 @@ func main() {
 			freq += x
 			if seen[freq] {
 				fmt.Printf("Duplicate: %d", freq)
-				return
 			}
 			seen[freq] = true
 		}
 		if err := sc.Err(); err != nil {
 			log.Fatal(err)
 		}
+		fmt.Printf("Frequency: %d\n", freq)
 	}
 }
