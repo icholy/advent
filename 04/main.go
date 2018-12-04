@@ -106,13 +106,12 @@ func (tr TimeRange) Duration() time.Duration {
 
 type Guard struct {
 	ID         int
-	Shifts     int
 	Sleeps     []TimeRange
 	TotalSleep time.Duration
 }
 
 func (g *Guard) String() string {
-	return fmt.Sprintf("%d: shifts=%d slept=%s ", g.ID, g.Shifts, g.TotalSleep)
+	return fmt.Sprintf("%d: slept=%s ", g.ID, g.TotalSleep)
 }
 
 func (g *Guard) Sleep(start, end time.Time) {
@@ -189,7 +188,6 @@ func (t *Tracker) Update(r Record) error {
 	switch r.Type {
 	case Begin:
 		t.current = t.Guard(r.GuardID)
-		t.current.Shifts++
 	case Sleep:
 		t.sleep = r.Time
 	case Wake:
