@@ -121,12 +121,26 @@ func (g *Guard) Sleep(start, end time.Time) {
 	g.TotalSleep += tr.Duration()
 }
 
-// hours -> minutes -> count
-type Histogram map[int]map[int]int
+// minute -> count
+type MinuteCount map[int]int
 
-func (h Histogram) Hour(hour int) map[int]int {
+func (mc MinuteCount) Max() (min, count int) {
+	var minMax, nMax int
+	for min, n := range mc {
+		if n > nMax {
+			nMax = n
+			minMax = min
+		}
+	}
+	return minMax, nMax
+}
+
+// hours -> minute count
+type Histogram map[int]MinuteCount
+
+func (h Histogram) Hour(hour int) MinuteCount {
 	if _, ok := h[hour]; !ok {
-		h[hour] = make(map[int]int)
+		h[hour] = make(MinuteCount)
 	}
 	return h[hour]
 }
@@ -220,13 +234,24 @@ func main() {
 	for _, s := range worst.Sleeps {
 		hist.Update(s)
 	}
-	var bestN, bestMin int
-	for min, n := range hist.Hour(0) {
-		if n > bestN {
-			bestN = n
-			bestMin = min
+
+	min, _ := hist.Hour(0).Max()
+	fmt.Printf("Minute: %d\n", min)
+	fmt.Printf("Answer: %d\n", worst.ID*min)
+
+	var maxCount, maxMinute, maxID int
+	for _, g := range t.Guards() {
+		hist := make(Histogram)
+		for _, s := range g.Sleeps {
+			hist.Update(s)
+		}
+		min, count := hist.Hour(0).Max()
+		if count > maxCount {
+			maxMinute = min
+			maxCount = count
+			maxID = g.ID
 		}
 	}
-	fmt.Printf("Minute: %d, Count: %d\n", bestN, bestMin)
-	fmt.Printf("Answer: %d\n", worst.ID*bestMin)
+
+	fmt.Printf("Answert (Part 2): %d\n", maxID*maxMinute)
 }
