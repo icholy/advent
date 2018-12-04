@@ -81,30 +81,25 @@ func (c Checksum) Sum() int {
 
 // Table indexes strings by their character counts it provides
 // a not-so-great way of finding similar strings
-type Table struct {
-	m map[rune]map[int][]string
-}
+type Table map[rune]map[int][]string
 
-func (t *Table) runeMap(r rune) map[int][]string {
-	if t.m == nil {
-		t.m = make(map[rune]map[int][]string)
-	}
-	rm, ok := t.m[r]
+func (t Table) runeMap(r rune) map[int][]string {
+	rm, ok := t[r]
 	if !ok {
 		rm = make(map[int][]string)
-		t.m[r] = rm
+		t[r] = rm
 	}
 	return rm
 }
 
-func (t *Table) Insert(s string) {
+func (t Table) Insert(s string) {
 	for r, n := range RuneCount(s) {
 		rm := t.runeMap(r)
 		rm[n] = append(rm[n], s)
 	}
 }
 
-func (t *Table) Lookup(r rune, n int) []string {
+func (t Table) Lookup(r rune, n int) []string {
 	rm := t.runeMap(r)
 	return rm[n]
 }
@@ -128,7 +123,7 @@ func main() {
 	defer f.Close()
 
 	var chk Checksum
-	var tbl Table
+	tbl := make(Table)
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		id := sc.Text()
