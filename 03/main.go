@@ -36,9 +36,9 @@ func SplitY(y int, r image.Rectangle) []image.Rectangle {
 	}
 }
 
-// Split splits every rectangle in rr by the points, x and y values.
-// Omit the ignore rectangle from the output
-func Split(p image.Point, rr []image.Rectangle, ignore image.Rectangle) []image.Rectangle {
+// SplitAll splits every rectangle in rr by the point's x and y values.
+// The ignore rectangle is omitted from the output
+func SplitAll(p image.Point, rr []image.Rectangle, ignore image.Rectangle) []image.Rectangle {
 	var ss []image.Rectangle
 	for _, r := range rr {
 		for _, r := range SplitX(p.X, r) {
@@ -52,37 +52,39 @@ func Split(p image.Point, rr []image.Rectangle, ignore image.Rectangle) []image.
 	return ss
 }
 
-// Subtract a from b.
-func Subtract(a, b image.Rectangle) []image.Rectangle {
+// Subtract a from b. This returns the parts of a that
+// are not covered by a.
+func Subtract(existing, b image.Rectangle) []image.Rectangle {
 	rr := []image.Rectangle{b}
-	if a.Overlaps(b) {
-		i := b.Intersect(a)
-		rr = Split(i.Min, rr, i)
-		rr = Split(i.Max, rr, i)
-		rr = Split(image.Pt(i.Max.X, i.Min.Y), rr, i)
-		rr = Split(image.Pt(i.Min.X, i.Max.Y), rr, i)
+	if b.Overlaps(existing) {
+		i := b.Intersect(existing)
+		rr = SplitAll(i.Min, rr, i)
+		rr = SplitAll(i.Max, rr, i)
+		rr = SplitAll(image.Pt(i.Max.X, i.Min.Y), rr, i)
+		rr = SplitAll(image.Pt(i.Min.X, i.Max.Y), rr, i)
 	}
 	return rr
 }
 
-// Unique returns the parts of r that don't overlap any of the existing rectangles
-func Unique(r image.Rectangle, existing []image.Rectangle) []image.Rectangle {
+// SubtractAll substracts all rects in a from b. This returns the parts of b
+// that are not covered by any rects in a.
+func SubtractAll(existing []image.Rectangle, b image.Rectangle) []image.Rectangle {
 	for _, e := range existing {
-		if r.Overlaps(e) {
+		if b.Overlaps(e) {
 			var unique []image.Rectangle
-			for _, r := range Subtract(e, r) {
-				unique = append(unique, Unique(r, existing)...)
+			for _, r := range Subtract(e, b) {
+				unique = append(unique, SubtractAll(existing, r)...)
 			}
 			return unique
 		}
 	}
-	return []image.Rectangle{r}
+	return []image.Rectangle{b}
 }
 
-// AppendUnique appends the parts of r which are not already covered by the
+// Union appends the parts of r which are not already covered by the
 // rectangles in rr
-func AppendUnique(rr []image.Rectangle, r image.Rectangle) []image.Rectangle {
-	return append(rr, Unique(r, rr)...)
+func Union(rr []image.Rectangle, r image.Rectangle) []image.Rectangle {
+	return append(rr, SubtractAll(rr, r)...)
 }
 
 // Area returns the summed areas of rr
@@ -161,7 +163,7 @@ func main() {
 		}
 		for _, c := range claims {
 			if c.Overlaps(claim) {
-				overlaps = AppendUnique(overlaps, c.Intersect(claim))
+				overlaps = Union(overlaps, c.Intersect(claim))
 			}
 		}
 		claims = append(claims, claim)
