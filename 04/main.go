@@ -25,7 +25,7 @@ type Record struct {
 	Time    time.Time
 	Text    string
 	Type    RecordType
-	GuardID int64
+	GuardID int
 }
 
 func (r Record) String() string {
@@ -38,7 +38,7 @@ var (
 	layout   = "2006-01-02 15:04"
 )
 
-func ParseRecordText(s string) (RecordType, int64) {
+func ParseRecordText(s string) (RecordType, int) {
 	switch s {
 	case "wakes up":
 		return Wake, 0
@@ -49,7 +49,7 @@ func ParseRecordText(s string) (RecordType, int64) {
 		if len(m) != 2 {
 			return Invalid, 0
 		}
-		id, err := strconv.ParseInt(m[1], 10, 64)
+		id, err := strconv.Atoi(m[1])
 		if err != nil {
 			return Invalid, 0
 		}
@@ -105,7 +105,7 @@ func (tr TimeRange) Duration() time.Duration {
 }
 
 type Guard struct {
-	ID         int64
+	ID         int
 	Shifts     int
 	Sleeps     []TimeRange
 	TotalSleep time.Duration
@@ -121,8 +121,26 @@ func (g *Guard) Sleep(start, end time.Time) {
 	g.TotalSleep += tr.Duration()
 }
 
+// hours -> minutes -> count
+type Histogram map[int]map[int]int
+
+func (h Histogram) Hour(hour int) map[int]int {
+	if _, ok := h[hour]; !ok {
+		h[hour] = make(map[int]int)
+	}
+	return h[hour]
+}
+
+func (h Histogram) Update(tr TimeRange) {
+	for t := tr.Start; t.Before(tr.End); t = t.Add(time.Minute) {
+		hour, minute := t.Hour(), t.Minute()
+		m := h.Hour(hour)
+		m[minute]++
+	}
+}
+
 type Tracker struct {
-	guards  map[int64]*Guard
+	guards  map[int]*Guard
 	current *Guard
 	sleep   time.Time
 	worst   *Guard
@@ -130,11 +148,11 @@ type Tracker struct {
 
 func NewTracker() *Tracker {
 	return &Tracker{
-		guards: make(map[int64]*Guard),
+		guards: make(map[int]*Guard),
 	}
 }
 
-func (t *Tracker) Guard(id int64) *Guard {
+func (t *Tracker) Guard(id int) *Guard {
 	g, ok := t.guards[id]
 	if !ok {
 		g = &Guard{ID: id}
@@ -194,9 +212,21 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	for _, g := range t.Guards() {
-		fmt.Println(g)
-	}
 
-	fmt.Println("Worst:", t.Worst())
+	worst := t.Worst()
+	fmt.Println("Worst:", worst)
+
+	hist := make(Histogram)
+	for _, s := range worst.Sleeps {
+		hist.Update(s)
+	}
+	var bestN, bestMin int
+	for min, n := range hist.Hour(0) {
+		if n > bestN {
+			bestN = n
+			bestMin = min
+		}
+	}
+	fmt.Printf("Minute: %d, Count: %d\n", bestN, bestMin)
+	fmt.Printf("Answer: %d\n", worst.ID*bestMin)
 }
