@@ -157,7 +157,6 @@ type Tracker struct {
 	guards  map[int]*Guard
 	current *Guard
 	sleep   time.Time
-	worst   *Guard
 }
 
 func NewTracker() *Tracker {
@@ -199,16 +198,40 @@ func (t *Tracker) Update(r Record) error {
 		return fmt.Errorf("invalid event")
 	}
 
-	// update the worst guard (one that sleeps the most)
-	if t.current != nil {
-		if t.worst == nil || t.current.TotalSleep > t.worst.TotalSleep {
-			t.worst = t.current
-		}
-	}
 	return nil
 }
 
-func (t *Tracker) Worst() *Guard { return t.worst }
+func PartTwo(gg []*Guard) int {
+	var maxCount, maxMinute, maxID int
+	for _, g := range gg {
+		hist := make(Histogram)
+		for _, s := range g.Sleeps {
+			hist.Update(s)
+		}
+		min, count := hist.Hour(0).Max()
+		if count > maxCount {
+			maxMinute = min
+			maxCount = count
+			maxID = g.ID
+		}
+	}
+	return maxID * maxMinute
+}
+
+func PartOne(gg []*Guard) int {
+	var worst *Guard
+	for _, g := range gg {
+		if worst == nil || g.TotalSleep > worst.TotalSleep {
+			worst = g
+		}
+	}
+	hist := make(Histogram)
+	for _, s := range worst.Sleeps {
+		hist.Update(s)
+	}
+	min, _ := hist.Hour(0).Max()
+	return worst.ID * min
+}
 
 func main() {
 	f, err := os.Open("input.txt")
@@ -226,32 +249,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
-	worst := t.Worst()
-	fmt.Println("Worst:", worst)
-
-	hist := make(Histogram)
-	for _, s := range worst.Sleeps {
-		hist.Update(s)
-	}
-
-	min, _ := hist.Hour(0).Max()
-	fmt.Printf("Minute: %d\n", min)
-	fmt.Printf("Answer: %d\n", worst.ID*min)
-
-	var maxCount, maxMinute, maxID int
-	for _, g := range t.Guards() {
-		hist := make(Histogram)
-		for _, s := range g.Sleeps {
-			hist.Update(s)
-		}
-		min, count := hist.Hour(0).Max()
-		if count > maxCount {
-			maxMinute = min
-			maxCount = count
-			maxID = g.ID
-		}
-	}
-
-	fmt.Printf("Answert (Part 2): %d\n", maxID*maxMinute)
+	fmt.Printf("Answer (Part 1): %d\n", PartOne(t.Guards()))
+	fmt.Printf("Answer (Part 2): %d\n", PartTwo(t.Guards()))
 }
