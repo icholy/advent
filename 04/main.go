@@ -91,7 +91,7 @@ func ParseRecords(r io.Reader) ([]Record, error) {
 		return nil, err
 	}
 	sort.Slice(rr, func(i, j int) bool {
-		return rr[i].Time.Before(rr[i].Time)
+		return rr[i].Time.Before(rr[j].Time)
 	})
 	return rr, nil
 }
@@ -143,6 +143,17 @@ func (t *Tracker) Guard(id int64) *Guard {
 	return g
 }
 
+func (t *Tracker) Guards() []*Guard {
+	var gg []*Guard
+	for _, g := range t.guards {
+		gg = append(gg, g)
+	}
+	sort.Slice(gg, func(i, j int) bool {
+		return gg[i].TotalSleep < gg[j].TotalSleep
+	})
+	return gg
+}
+
 func (t *Tracker) Update(r Record) error {
 	switch r.Type {
 	case Begin:
@@ -183,5 +194,9 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	fmt.Println(t.Worst())
+	for _, g := range t.Guards() {
+		fmt.Println(g)
+	}
+
+	fmt.Println("Worst:", t.Worst())
 }
