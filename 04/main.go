@@ -186,6 +186,9 @@ func (t *Tracker) Guards() []*Guard {
 }
 
 func (t *Tracker) Update(r Record) error {
+	if r.Type != Begin && t.current == nil {
+		return fmt.Errorf("record out of order", r)
+	}
 	switch r.Type {
 	case Begin:
 		t.current = t.Guard(r.GuardID)
@@ -197,7 +200,6 @@ func (t *Tracker) Update(r Record) error {
 	default:
 		return fmt.Errorf("invalid event")
 	}
-
 	return nil
 }
 
