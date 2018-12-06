@@ -151,9 +151,18 @@ func Draw(coords []image.Point) error {
 	cv := draw.NewCanvas(bounds.Dx()+1, bounds.Dy()+1)
 	cv.Draw(cv.Bounds().Fill(), '.')
 
+	finite := map[int]bool{}
+	for i, p := range coords {
+		finite[i] = IsFinite(p, coords)
+	}
+
 	Iterate(cv.Bounds().Image(), func(p image.Point) {
 		if i := Nearest(p, coords); i != -1 {
-			cv.Draw(draw.FromImagePoint(p), IndexByte(i))
+			if finite[i] {
+				cv.Draw(draw.FromImagePoint(p), IndexByte(i))
+			} else {
+				cv.Draw(draw.FromImagePoint(p), '*')
+			}
 		}
 	})
 
