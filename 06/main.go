@@ -31,7 +31,11 @@ func Nearest(point image.Point, points []image.Point) int {
 		if p == point {
 			continue
 		}
-		if d := Distance(point, p); d < dist || dist == -1 {
+		d := Distance(point, p)
+		switch {
+		case d == dist:
+			closest = -1
+		case d < dist || dist == -1:
 			closest = i
 			dist = d
 		}
