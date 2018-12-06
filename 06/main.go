@@ -84,18 +84,8 @@ func ReadInput(file string) ([]image.Point, error) {
 	return pp, nil
 }
 
-func UpperByte(i int) byte {
-	if i > 26 {
-		return '?'
-	}
-	return 'A' + byte(i)
-}
-
-func LowerByte(i int) byte {
-	if i > 26 {
-		return '?'
-	}
-	return 'a' + byte(i)
+func IndexByte(i int) byte {
+	return '0' + byte(i)
 }
 
 func Max(a, b image.Point) image.Point {
@@ -154,18 +144,22 @@ func PartOne(coords []image.Point) int {
 }
 
 func Draw(coords []image.Point) error {
-	bounds := Bounds(coords).Inset(-1)
-	cv := draw.NewCanvas(bounds.Dx(), bounds.Dy())
+	bounds := image.Rectangle{
+		Min: image.ZP,
+		Max: Bounds(coords).Max,
+	}
+	cv := draw.NewCanvas(bounds.Dx()+1, bounds.Dy()+1)
 	cv.Draw(cv.Bounds().Fill(), '.')
 
 	Iterate(cv.Bounds().Image(), func(p image.Point) {
 		if i := Nearest(p, coords); i != -1 {
-			cv.Draw(draw.FromImagePoint(p), LowerByte(i))
+			cv.Draw(draw.FromImagePoint(p), IndexByte(i))
 		}
 	})
 
-	for i, c := range coords {
-		cv.Draw(draw.FromImagePoint(c), UpperByte(i))
+	for _, c := range coords {
+		fmt.Println(bounds, c)
+		cv.Draw(draw.FromImagePoint(c), '*')
 	}
 
 	return cv.WriteTo(os.Stdout)
