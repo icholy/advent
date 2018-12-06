@@ -43,6 +43,28 @@ func Nearest(point image.Point, points []image.Point) int {
 	return closest
 }
 
+func IsFinite(point image.Point, points []image.Point) bool {
+	var above, below, left, right bool
+	for _, p := range points {
+		if p.X < point.X {
+			left = true
+		}
+		if p.X > point.X {
+			right = true
+		}
+		if p.Y < point.Y {
+			above = true
+		}
+		if p.Y > point.Y {
+			below = true
+		}
+		if above && below && left && right {
+			return true
+		}
+	}
+	return false
+}
+
 func ReadInput(file string) ([]image.Point, error) {
 	var pp []image.Point
 	f, err := os.Open(file)
@@ -103,7 +125,11 @@ func main() {
 	})
 
 	for i, c := range coords {
-		cv.Draw(draw.FromImagePoint(c), UpperByte(i))
+		if IsFinite(c, coords) {
+			cv.Draw(draw.FromImagePoint(c), '*')
+		} else {
+			cv.Draw(draw.FromImagePoint(c), UpperByte(i))
+		}
 	}
 
 	if err := cv.WriteTo(os.Stdout); err != nil {
