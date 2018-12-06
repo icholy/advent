@@ -22,25 +22,12 @@ func Distance(a, b image.Point) int {
 	return Abs(delta.X) + Abs(delta.Y)
 }
 
-func IsNearest(center, other image.Point, points []image.Point) bool {
-	dist := Distance(center, other)
-	for _, p := range points {
-		if Distance(p, center) <= dist {
-			return false
-		}
-	}
-	return true
-}
-
 func Nearest(point image.Point, points []image.Point) int {
 	var (
 		closest int
 		dist    = -1
 	)
 	for i, p := range points {
-		if p == point {
-			continue
-		}
 		d := Distance(point, p)
 		switch {
 		case d == dist:
@@ -51,28 +38,6 @@ func Nearest(point image.Point, points []image.Point) int {
 		}
 	}
 	return closest
-}
-
-func IsFinite(point image.Point, points []image.Point) bool {
-	var above, below, left, right bool
-	for _, p := range points {
-		if p.X < point.X {
-			left = true
-		}
-		if p.X > point.X {
-			right = true
-		}
-		if p.Y < point.Y {
-			above = true
-		}
-		if p.Y > point.Y {
-			below = true
-		}
-		if above && below && left && right {
-			return true
-		}
-	}
-	return false
 }
 
 func ReadInput(file string) ([]image.Point, error) {
@@ -150,24 +115,20 @@ func Iterate(r image.Rectangle, f func(image.Point)) {
 	}
 }
 
-func Area(center, other image.Point, coords []image.Point, bounds image.Rectangle) int {
-	if !IsFinite(center, coords) {
-		return -1
-	}
-	var area int
-	Iterate(bounds, func(p image.Point) {
-		if IsNearest(center, p, coords) {
-			area++
+func PartOne(coords []image.Point) int {
+	var max int
+	areas := map[int]int{}
+	Iterate(Bounds(coords), func(p image.Point) {
+		i := Nearest(p, coords)
+		areas[i]++
+		if area := areas[i]; area > max {
+			max = area
 		}
 	})
-	return area
+	return max
 }
 
-func main() {
-	coords, err := ReadInput("input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
+func Draw(coords []image.Point) error {
 	cv := draw.NewCanvas(50, 20)
 	cv.Draw(cv.Bounds().Fill(), '.')
 
@@ -178,26 +139,21 @@ func main() {
 	})
 
 	for i, c := range coords {
-		if IsFinite(c, coords) {
-			cv.Draw(draw.FromImagePoint(c), '*')
-		} else {
-			cv.Draw(draw.FromImagePoint(c), UpperByte(i))
-		}
+		cv.Draw(draw.FromImagePoint(c), UpperByte(i))
 	}
 
-	cv.Draw(draw.FromImageRect(Bounds(coords)), '*')
+	return cv.WriteTo(os.Stdout)
+}
 
-	areas := map[int]int{}
-	Iterate(Bounds(coords), func(p image.Point) {
-		i := Nearest(p, coords)
-		areas[i]++
-	})
-
-	for i, area := range areas {
-		fmt.Println(string([]byte{UpperByte(i)}), area)
-	}
-
-	if err := cv.WriteTo(os.Stdout); err != nil {
+func main() {
+	coords, err := ReadInput("input.txt")
+	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Printf("Answer (Part 1): %d\n", PartOne(coords))
+
+	// if err := Draw(coords); err != nil {
+	// 	log.Fatal(err)
+	// }
 }
