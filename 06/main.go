@@ -40,6 +40,28 @@ func Nearest(point image.Point, points []image.Point) int {
 	return closest
 }
 
+func IsFinite(point image.Point, points []image.Point) bool {
+	var above, below, left, right bool
+	for _, p := range points {
+		if p.X < point.X {
+			left = true
+		}
+		if p.X > point.X {
+			right = true
+		}
+		if p.Y < point.Y {
+			above = true
+		}
+		if p.Y > point.Y {
+			below = true
+		}
+		if above && below && left && right {
+			return true
+		}
+	}
+	return false
+}
+
 func ReadInput(file string) ([]image.Point, error) {
 	var pp []image.Point
 	f, err := os.Open(file)
@@ -116,15 +138,18 @@ func Iterate(r image.Rectangle, f func(image.Point)) {
 }
 
 func PartOne(coords []image.Point) int {
-	var max int
-	areas := map[int]int{}
+	areas := map[image.Point]int{}
 	Iterate(Bounds(coords), func(p image.Point) {
-		i := Nearest(p, coords)
-		areas[i]++
-		if area := areas[i]; area > max {
-			max = area
+		if i := Nearest(p, coords); i > 0 {
+			areas[coords[i]]++
 		}
 	})
+	var max int
+	for c, area := range areas {
+		if area > max && IsFinite(c, coords) {
+			max = area
+		}
+	}
 	return max
 }
 
