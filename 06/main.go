@@ -158,7 +158,6 @@ func Draw(coords []image.Point) error {
 	})
 
 	for _, c := range coords {
-		fmt.Println(bounds, c)
 		cv.Draw(draw.FromImagePoint(c), '*')
 	}
 
