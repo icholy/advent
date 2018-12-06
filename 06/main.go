@@ -24,17 +24,17 @@ func Distance(a, b image.Point) int {
 
 func Nearest(point image.Point, points []image.Point) int {
 	var (
-		closest int
-		dist    = -1
+		closest  int
+		distance = -1
 	)
 	for i, p := range points {
 		d := Distance(point, p)
 		switch {
-		case d == dist:
+		case d == distance:
 			closest = -1
-		case d < dist || dist == -1:
+		case d < distance || distance == -1:
 			closest = i
-			dist = d
+			distance = d
 		}
 	}
 	return closest
@@ -154,7 +154,8 @@ func PartOne(coords []image.Point) int {
 }
 
 func Draw(coords []image.Point) error {
-	cv := draw.NewCanvas(50, 20)
+	bounds := Bounds(coords)
+	cv := draw.NewCanvas(bounds.Dx(), bounds.Dy())
 	cv.Draw(cv.Bounds().Fill(), '.')
 
 	Iterate(cv.Bounds().Image(), func(p image.Point) {
@@ -178,7 +179,7 @@ func main() {
 
 	fmt.Printf("Answer (Part 1): %d\n", PartOne(coords))
 
-	// if err := Draw(coords); err != nil {
-	// 	log.Fatal(err)
-	// }
+	if err := Draw(coords); err != nil {
+		log.Fatal(err)
+	}
 }
