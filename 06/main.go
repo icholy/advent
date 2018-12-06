@@ -154,7 +154,7 @@ func PartOne(coords []image.Point) int {
 }
 
 func Draw(coords []image.Point) error {
-	bounds := Bounds(coords)
+	bounds := Bounds(coords).Inset(-1)
 	cv := draw.NewCanvas(bounds.Dx(), bounds.Dy())
 	cv.Draw(cv.Bounds().Fill(), '.')
 
