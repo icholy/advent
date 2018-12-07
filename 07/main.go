@@ -9,14 +9,6 @@ import (
 	"strings"
 )
 
-type State int
-
-const (
-	Todo State = iota
-	Working
-	Done
-)
-
 type Constraint struct {
 	Before, After string
 }
@@ -24,6 +16,41 @@ type Constraint struct {
 func (c Constraint) String() string {
 	return fmt.Sprintf("%s before %s", c.Before, c.After)
 }
+
+func ReadInput(file string) ([]Constraint, error) {
+	var cc []Constraint
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		var c Constraint
+		_, err := fmt.Sscanf(
+			sc.Text(),
+			"Step %s must be finished before step %s can begin.",
+			&c.Before,
+			&c.After,
+		)
+		if err != nil {
+			return nil, err
+		}
+		cc = append(cc, c)
+	}
+	if err := sc.Err(); err != nil {
+		return nil, err
+	}
+	return cc, nil
+}
+
+type State int
+
+const (
+	Todo State = iota
+	Working
+	Done
+)
 
 type Step struct {
 	Name  string
@@ -39,7 +66,7 @@ func (n ByName) Less(i, j int) bool { return n[i].Name < n[j].Name }
 
 func (s Step) String() string { return s.Name }
 
-func (s Step) IsReady() bool {
+func (s Step) Ready() bool {
 	for _, d := range s.Deps {
 		if d.State != Done {
 			return false
@@ -71,21 +98,21 @@ func (g Graph) Step(name string) *Step {
 	return g[name]
 }
 
-func (g Graph) Ready() []*Step {
-	var ready []*Step
+func (g Graph) Todo() []*Step {
+	var todo []*Step
 	for _, s := range g {
-		if s.State == Todo && s.IsReady() {
-			ready = append(ready, s)
+		if s.State == Todo && s.Ready() {
+			todo = append(todo, s)
 		}
 	}
-	sort.Sort(ByName(ready))
-	return ready
+	sort.Sort(ByName(todo))
+	return todo
 }
 
 func (g Graph) Next() *Step {
 	var next *Step
 	for _, s := range g {
-		if s.State == Todo && s.IsReady() {
+		if s.State == Todo && s.Ready() {
 			if next == nil || s.Name < next.Name {
 				next = s
 			}
@@ -154,33 +181,6 @@ func (ww Workers) String() string {
 	return b.String()
 }
 
-func ReadInput(file string) ([]Constraint, error) {
-	var cc []Constraint
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		var c Constraint
-		_, err := fmt.Sscanf(
-			sc.Text(),
-			"Step %s must be finished before step %s can begin.",
-			&c.Before,
-			&c.After,
-		)
-		if err != nil {
-			return nil, err
-		}
-		cc = append(cc, c)
-	}
-	if err := sc.Err(); err != nil {
-		return nil, err
-	}
-	return cc, nil
-}
-
 func PartOne(constraints []Constraint) string {
 	g := make(Graph)
 	for _, c := range constraints {
@@ -204,7 +204,7 @@ func PartTwo(constraints []Constraint) int {
 		for _, w := range workers {
 			w.Update(now)
 		}
-		for _, s := range g.Ready() {
+		for _, s := range g.Todo() {
 			if w, ok := workers.Idle(); ok {
 				w.Do(now, s)
 			}
