@@ -22,22 +22,25 @@ func Distance(a, b image.Point) int {
 	return Abs(delta.X) + Abs(delta.Y)
 }
 
-func Nearest(point image.Point, points []image.Point) int {
+func Nearest(point image.Point, points []image.Point) (image.Point, bool) {
 	var (
-		closest  int
+		closest  image.Point
+		found    bool
 		distance = -1
 	)
 	for i, p := range points {
 		d := Distance(point, p)
 		switch {
 		case d == distance:
-			closest = -1
+			closest = p
+			found = false
 		case d < distance || distance == -1:
-			closest = i
+			closest = p
 			distance = d
+			found = true
 		}
 	}
-	return closest
+	return closest, found
 }
 
 func IsFinite(point image.Point, points []image.Point) bool {
@@ -120,8 +123,8 @@ func Iterate(r image.Rectangle, f func(image.Point)) {
 func PartOne(coords []image.Point) int {
 	areas := map[image.Point]int{}
 	Iterate(Bounds(coords), func(p image.Point) {
-		if i := Nearest(p, coords); i > 0 {
-			areas[coords[i]]++
+		if c, ok := Nearest(p, coords); ok {
+			areas[c]++
 		}
 	})
 	var max int
@@ -157,17 +160,17 @@ func Draw(coords []image.Point) error {
 	cv := draw.NewCanvas(bounds.Dx()+1, bounds.Dy()+1)
 	cv.Draw(cv.Bounds().Fill(), '.')
 
-	finite := map[int]bool{}
-	for i, p := range coords {
-		finite[i] = IsFinite(p, coords)
+	finite := map[image.Point]bool{}
+	for _, p := range coords {
+		finite[p] = IsFinite(p, coords)
 	}
 
 	Iterate(cv.Bounds().Image(), func(p image.Point) {
-		if i := Nearest(p, coords); i != -1 {
-			if finite[i] {
-				cv.Draw(draw.FromImagePoint(p), '0'+byte(i))
+		if c, ok := Nearest(p, coords); ok {
+			if finite[c] {
+				cv.Draw(draw.FromImagePoint(p), '$')
 			} else {
-				cv.Draw(draw.FromImagePoint(p), '*')
+				cv.Draw(draw.FromImagePoint(p), '%')
 			}
 		}
 	})
@@ -184,11 +187,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	if err := Draw(coords); err != nil {
 		log.Fatal(err)
 	}
-
 	fmt.Printf("Answer (Part 1): %d\n", PartOne(coords))
 	fmt.Printf("Answer (Part 2): %d\n", PartTwo(coords))
 }
