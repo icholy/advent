@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 )
 
 type Constraint struct {
@@ -75,9 +76,11 @@ func (s Step) Ready() bool {
 	return true
 }
 
-func (s Step) Seconds() int {
-	b := []byte(s.Name)[0]
-	return int(b) - 'A' + 1 + 60
+func (s Step) Duration() time.Duration {
+	for _, r := range s.Name {
+		return (time.Duration(r) - 'A' + 1 + 60) * time.Second
+	}
+	return 0
 }
 
 type Graph map[string]*Step
@@ -128,23 +131,22 @@ func (g Graph) Add(c Constraint) {
 
 type Worker struct {
 	Step *Step
-	End  int
+	End  time.Time
 	Idle bool
 }
 
-func (w *Worker) Update(now int) {
-	if !w.Idle && w.End <= now {
+func (w *Worker) Update(now time.Time) {
+	if !w.Idle && now.After(w.End) {
 		w.Idle = true
 		w.Step.State = Done
-		w.End = 0
 	}
 }
 
-func (w *Worker) Do(now int, s *Step) {
+func (w *Worker) Do(now time.Time, s *Step) {
 	s.State = Working
 	w.Idle = false
 	w.Step = s
-	w.End = now + s.Seconds()
+	w.End = now.Add(s.Duration())
 }
 
 func (w Worker) String() string {
@@ -194,13 +196,14 @@ func PartOne(constraints []Constraint) string {
 	return seq.String()
 }
 
-func PartTwo(constraints []Constraint) int {
+func PartTwo(constraints []Constraint) time.Duration {
 	g := make(Graph)
 	for _, c := range constraints {
 		g.Add(c)
 	}
+	started := time.Unix(0, 0)
 	workers := NewWorkers(5)
-	for now := 0; true; now++ {
+	for now := started; true; now = now.Add(time.Second) {
 		for _, w := range workers {
 			w.Update(now)
 		}
@@ -210,7 +213,7 @@ func PartTwo(constraints []Constraint) int {
 			}
 		}
 		if g.Done() {
-			return now
+			return now.Sub(started)
 		}
 	}
 	panic("unreachable")
@@ -222,5 +225,5 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Answer (Part 1): %s\n", PartOne(constraints))
-	fmt.Printf("Answer (Part 2): %d\n", PartTwo(constraints))
+	fmt.Printf("Answer (Part 2): %s\n", PartTwo(constraints))
 }
