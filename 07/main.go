@@ -61,7 +61,7 @@ func (g Graph) Step(name string) *Step {
 func (g Graph) Ready() []*Step {
 	var ready []*Step
 	for _, s := range g {
-		if !s.Done || s.Ready() {
+		if !s.Done && s.Ready() {
 			ready = append(ready, s)
 		}
 	}
