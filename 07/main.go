@@ -31,7 +31,7 @@ func (n ByName) Less(i, j int) bool { return n[i].Name < n[j].Name }
 
 func (s Step) String() string { return s.Name }
 
-func (s Step) Ready() bool {
+func (s Step) IsReady() bool {
 	for _, d := range s.Deps {
 		if !d.Done {
 			return false
@@ -61,7 +61,7 @@ func (g Graph) Step(name string) *Step {
 func (g Graph) Ready() []*Step {
 	var ready []*Step
 	for _, s := range g {
-		if !s.Done && s.Ready() {
+		if !s.Done && s.IsReady() {
 			ready = append(ready, s)
 		}
 	}
@@ -72,7 +72,7 @@ func (g Graph) Ready() []*Step {
 func (g Graph) Next() *Step {
 	var next *Step
 	for _, s := range g {
-		if !s.Done && s.Ready() {
+		if !s.Done && s.IsReady() {
 			if next == nil || s.Name < next.Name {
 				next = s
 			}
