@@ -28,7 +28,7 @@ func Nearest(point image.Point, points []image.Point) (image.Point, bool) {
 		found    bool
 		distance = -1
 	)
-	for i, p := range points {
+	for _, p := range points {
 		d := Distance(point, p)
 		switch {
 		case d == distance:
