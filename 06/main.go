@@ -145,6 +145,22 @@ func PartOne(coords []image.Point) int {
 	return max
 }
 
+func PartTwo(coords []image.Point) int {
+	var area int
+	Iterate(Bounds(coords), func(p image.Point) {
+		var sum int
+		for _, c := range coords {
+			if d := Distance(p, c); d < 1000 {
+				sum += d
+			}
+		}
+		if sum < 10000 {
+			area++
+		}
+	})
+	return area
+}
+
 func Draw(coords []image.Point) error {
 	bounds := image.Rectangle{
 		Min: image.ZP,
@@ -181,9 +197,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Answer (Part 1): %d\n", PartOne(coords))
-
 	if err := Draw(coords); err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Printf("Answer (Part 1): %d\n", PartOne(coords))
+	fmt.Printf("Answer (Part 2): %d\n", PartTwo(coords))
 }
