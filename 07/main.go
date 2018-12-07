@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
+	"strings"
 )
 
 type Constraint struct {
@@ -21,6 +23,12 @@ type Step struct {
 	Deps []*Step
 }
 
+type ByName []*Step
+
+func (n ByName) Len() int           { return len(n) }
+func (n ByName) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+func (n ByName) Less(i, j int) bool { return n[i].Name < n[j].Name }
+
 func (s Step) String() string { return s.Name }
 
 func (s Step) Ready() bool {
@@ -34,11 +42,31 @@ func (s Step) Ready() bool {
 
 type Graph map[string]*Step
 
+func (g Graph) Done() bool {
+	for _, s := range g {
+		if !s.Done {
+			return false
+		}
+	}
+	return true
+}
+
 func (g Graph) Step(name string) *Step {
 	if _, ok := g[name]; !ok {
 		g[name] = &Step{Name: name}
 	}
 	return g[name]
+}
+
+func (g Graph) Ready() []*Step {
+	var ready []*Step
+	for _, s := range g {
+		if !s.Done || s.Ready() {
+			ready = append(ready, s)
+		}
+	}
+	sort.Sort(ByName(ready))
+	return ready
 }
 
 func (g Graph) Next() *Step {
@@ -85,18 +113,41 @@ func ReadInput(file string) ([]Constraint, error) {
 	return cc, nil
 }
 
+func PartOne(constraints []Constraint) string {
+	g := make(Graph)
+	for _, c := range constraints {
+		g.Add(c)
+	}
+	var seq strings.Builder
+	for !g.Done() {
+		s := g.Next()
+		s.Done = true
+		seq.WriteString(s.Name)
+	}
+	return seq.String()
+}
+
+func PartTwo(constraints []Constraint) string {
+	g := make(Graph)
+	for _, c := range constraints {
+		g.Add(c)
+	}
+	var seq strings.Builder
+	for !g.Done() {
+		for _, s := range g.Ready() {
+			s.Done = true
+			seq.WriteString(s.Name)
+		}
+		seq.WriteString("-")
+	}
+	return seq.String()
+}
+
 func main() {
 	constraints, err := ReadInput("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
-	g := make(Graph)
-	for _, c := range constraints {
-		g.Add(c)
-	}
-
-	for s := g.Next(); s != nil; s = g.Next() {
-		fmt.Print(s)
-		s.Done = true
-	}
+	fmt.Printf("Answer (Part 1): %s\n", PartOne(constraints))
+	fmt.Printf("Answer (Part 2): %s\n", PartTwo(constraints))
 }
