@@ -187,8 +187,7 @@ func PartOne(constraints []Constraint) string {
 		g.Add(c)
 	}
 	var seq strings.Builder
-	for !g.Done() {
-		s := g.Next()
+	for s := g.Next(); s != nil; s = g.Next() {
 		s.State = Done
 		seq.WriteString(s.Name)
 	}
