@@ -86,39 +86,27 @@ func ReadInput(file string) ([]image.Point, error) {
 	return pp, nil
 }
 
-func IndexByte(i int) byte {
-	return '0' + byte(i)
-}
-
-func Max(a, b image.Point) image.Point {
-	if b.X > a.X || a.X == -1 {
-		a.X = b.X
-	}
-	if b.Y > a.Y || a.Y == -1 {
-		a.Y = b.Y
-	}
-	return a
-}
-
-func Min(a, b image.Point) image.Point {
-	if b.X < a.X || a.X == -1 {
-		a.X = b.X
-	}
-	if b.Y < a.Y || a.Y == -1 {
-		a.Y = b.Y
-	}
-	return a
-}
-
-var Unset = image.Point{-1, -1}
-
 func Bounds(points []image.Point) image.Rectangle {
-	var min, max = Unset, Unset
-	for _, p := range points {
-		min = Min(min, p)
-		max = Max(max, p)
+	var b image.Rectangle
+	for i, p := range points {
+		if i == 0 {
+			b.Min = p
+			b.Max = p
+		}
+		if p.X < b.Min.X {
+			b.Min.X = p.X
+		}
+		if p.Y < b.Min.Y {
+			b.Min.Y = p.Y
+		}
+		if p.X > b.Max.X {
+			b.Max.X = p.X
+		}
+		if p.Y > b.Max.Y {
+			b.Max.Y = p.Y
+		}
 	}
-	return image.Rectangle{min, max}
+	return b
 }
 
 func Iterate(r image.Rectangle, f func(image.Point)) {
@@ -177,7 +165,7 @@ func Draw(coords []image.Point) error {
 	Iterate(cv.Bounds().Image(), func(p image.Point) {
 		if i := Nearest(p, coords); i != -1 {
 			if finite[i] {
-				cv.Draw(draw.FromImagePoint(p), IndexByte(i))
+				cv.Draw(draw.FromImagePoint(p), '0'+byte(i))
 			} else {
 				cv.Draw(draw.FromImagePoint(p), '*')
 			}
