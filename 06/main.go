@@ -43,16 +43,18 @@ func Nearest(point image.Point, points []image.Point) int {
 func IsFinite(point image.Point, points []image.Point) bool {
 	var above, below, left, right bool
 	for _, p := range points {
-		if p.X < point.X {
+		delta := point.Sub(p)
+		dx, dy := Abs(delta.X), Abs(delta.Y)
+		if p.X < point.X && dy <= dx {
 			left = true
 		}
-		if p.X > point.X {
+		if p.X > point.X && dy <= dx {
 			right = true
 		}
-		if p.Y < point.Y {
+		if p.Y < point.Y && dx <= dy {
 			above = true
 		}
-		if p.Y > point.Y {
+		if p.Y > point.Y && dx <= dy {
 			below = true
 		}
 		if above && below && left && right {
