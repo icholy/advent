@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+type State int
+
+const (
+	Todo State = iota
+	Working
+	Done
+)
+
 type Constraint struct {
 	Before, After string
 }
@@ -18,9 +26,9 @@ func (c Constraint) String() string {
 }
 
 type Step struct {
-	Name string
-	Done bool
-	Deps []*Step
+	Name  string
+	State State
+	Deps  []*Step
 }
 
 type ByName []*Step
@@ -33,18 +41,23 @@ func (s Step) String() string { return s.Name }
 
 func (s Step) IsReady() bool {
 	for _, d := range s.Deps {
-		if !d.Done {
+		if d.State != Done {
 			return false
 		}
 	}
 	return true
 }
 
+func (s Step) Seconds() int {
+	b := []byte(s.Name)[0]
+	return int(b) - 'A' + 1 + 60
+}
+
 type Graph map[string]*Step
 
 func (g Graph) Done() bool {
 	for _, s := range g {
-		if !s.Done {
+		if s.State != Done {
 			return false
 		}
 	}
@@ -61,7 +74,7 @@ func (g Graph) Step(name string) *Step {
 func (g Graph) Ready() []*Step {
 	var ready []*Step
 	for _, s := range g {
-		if !s.Done && s.IsReady() {
+		if s.State == Todo && s.IsReady() {
 			ready = append(ready, s)
 		}
 	}
@@ -72,7 +85,7 @@ func (g Graph) Ready() []*Step {
 func (g Graph) Next() *Step {
 	var next *Step
 	for _, s := range g {
-		if !s.Done && s.IsReady() {
+		if s.State == Todo && s.IsReady() {
 			if next == nil || s.Name < next.Name {
 				next = s
 			}
@@ -84,6 +97,61 @@ func (g Graph) Next() *Step {
 func (g Graph) Add(c Constraint) {
 	n := g.Step(c.After)
 	n.Deps = append(n.Deps, g.Step(c.Before))
+}
+
+type Worker struct {
+	Step *Step
+	End  int
+	Idle bool
+}
+
+func (w *Worker) Update(now int) {
+	if !w.Idle && w.End <= now {
+		w.Idle = true
+		w.Step.State = Done
+		w.End = 0
+	}
+}
+
+func (w *Worker) Do(now int, s *Step) {
+	s.State = Working
+	w.Idle = false
+	w.Step = s
+	w.End = now + s.Seconds()
+}
+
+func (w Worker) String() string {
+	if w.Idle {
+		return "idle"
+	}
+	return w.Step.Name
+}
+
+type Workers []*Worker
+
+func NewWorkers(n int) Workers {
+	var ww Workers
+	for i := 0; i < n; i++ {
+		ww = append(ww, &Worker{Idle: true})
+	}
+	return ww
+}
+
+func (ww Workers) Idle() (*Worker, bool) {
+	for _, w := range ww {
+		if w.Idle {
+			return w, true
+		}
+	}
+	return nil, false
+}
+
+func (ww Workers) String() string {
+	var b strings.Builder
+	for i, w := range ww {
+		fmt.Fprintf(&b, "worker_%d=%s ", i+1, w)
+	}
+	return b.String()
 }
 
 func ReadInput(file string) ([]Constraint, error) {
@@ -121,26 +189,32 @@ func PartOne(constraints []Constraint) string {
 	var seq strings.Builder
 	for !g.Done() {
 		s := g.Next()
-		s.Done = true
+		s.State = Done
 		seq.WriteString(s.Name)
 	}
 	return seq.String()
 }
 
-func PartTwo(constraints []Constraint) string {
+func PartTwo(constraints []Constraint) int {
 	g := make(Graph)
 	for _, c := range constraints {
 		g.Add(c)
 	}
-	var seq strings.Builder
-	for !g.Done() {
-		for _, s := range g.Ready() {
-			s.Done = true
-			seq.WriteString(s.Name)
+	workers := NewWorkers(5)
+	for now := 0; true; now++ {
+		for _, w := range workers {
+			w.Update(now)
 		}
-		seq.WriteString("-")
+		for _, s := range g.Ready() {
+			if w, ok := workers.Idle(); ok {
+				w.Do(now, s)
+			}
+		}
+		if g.Done() {
+			return now
+		}
 	}
-	return seq.String()
+	panic("unreachable")
 }
 
 func main() {
@@ -149,5 +223,5 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Answer (Part 1): %s\n", PartOne(constraints))
-	fmt.Printf("Answer (Part 2): %s\n", PartTwo(constraints))
+	fmt.Printf("Answer (Part 2): %d\n", PartTwo(constraints))
 }
