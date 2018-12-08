@@ -14,17 +14,14 @@ type Node struct {
 	Children []*Node
 }
 
+func (n Node) Debug() string {
+	var b strings.Builder
+	n.WriteTo(&b, 0)
+	return b.String()
+}
+
 func (n Node) WriteTo(w io.Writer, indent int) error {
-	var metadata []string
-	for _, x := range n.MetaData {
-		metadata = append(metadata, strconv.Itoa(x))
-	}
-	_, err := fmt.Fprintf(w,
-		"%sNode(children=%d, metadata=[%s])\n",
-		strings.Repeat("  ", indent),
-		len(n.Children),
-		strings.Join(metadata, ", "),
-	)
+	_, err := fmt.Fprintf(w, "%s%s\n", strings.Repeat("  ", indent), n)
 	if err != nil {
 		return err
 	}
@@ -37,9 +34,11 @@ func (n Node) WriteTo(w io.Writer, indent int) error {
 }
 
 func (n Node) String() string {
-	var b strings.Builder
-	n.WriteTo(&b, 0)
-	return b.String()
+	var metadata []string
+	for _, x := range n.MetaData {
+		metadata = append(metadata, strconv.Itoa(x))
+	}
+	return fmt.Sprintf("Node(children=%d, metadata=[%s])", len(n.Children), strings.Join(metadata, ", "))
 }
 
 type Parser struct {
@@ -150,7 +149,7 @@ func main() {
 	if err := parser.Err(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(root)
+	fmt.Println(root.Debug())
 	fmt.Printf("Answer (Part 1): %d\n", PartOne(root))
 	fmt.Printf("Answer (Part 2): %d\n", PartTwo(root))
 }
