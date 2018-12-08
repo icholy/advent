@@ -124,6 +124,22 @@ func PartOne(n *Node) int {
 	return sum
 }
 
+func PartTwo(n *Node) int {
+	var sum int
+	if len(n.Children) == 0 {
+		for _, x := range n.MetaData {
+			sum += x
+		}
+	} else {
+		for _, x := range n.MetaData {
+			if i := x - 1; i >= 0 && i < len(n.Children) {
+				sum += PartTwo(n.Children[i])
+			}
+		}
+	}
+	return sum
+}
+
 func main() {
 	nums, err := ReadInput("input.txt")
 	if err != nil {
@@ -136,4 +152,5 @@ func main() {
 	}
 	fmt.Println(root)
 	fmt.Printf("Answer (Part 1): %d\n", PartOne(root))
+	fmt.Printf("Answer (Part 2): %d\n", PartTwo(root))
 }
