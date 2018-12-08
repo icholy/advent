@@ -91,7 +91,7 @@ func (p *Parser) Node() *Node {
 func (p *Parser) Root() *Node {
 	node := p.Node()
 	if !p.Done() {
-		p.err = fmt.Errorf("trailing numbers after node")
+		p.err = fmt.Errorf("trailing numbers after root node")
 	}
 	return node
 }
