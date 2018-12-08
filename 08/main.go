@@ -132,7 +132,7 @@ func PartTwo(n *Node) int {
 		}
 	} else {
 		for _, x := range n.MetaData {
-			if i := x - 1; i >= 0 && i < len(n.Children) {
+			if i := x - 1; 0 <= i && i < len(n.Children) {
 				sum += PartTwo(n.Children[i])
 			}
 		}
