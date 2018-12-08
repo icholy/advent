@@ -113,6 +113,17 @@ func ReadInput(file string) ([]int, error) {
 	return nums, nil
 }
 
+func PartOne(n *Node) int {
+	var sum int
+	for _, x := range n.MetaData {
+		sum += x
+	}
+	for _, child := range n.Children {
+		sum += PartOne(child)
+	}
+	return sum
+}
+
 func main() {
 	nums, err := ReadInput("input.txt")
 	if err != nil {
@@ -124,4 +135,5 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println(root)
+	fmt.Printf("Answer (Part 1): %d\n", PartOne(root))
 }
