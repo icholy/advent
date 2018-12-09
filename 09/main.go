@@ -66,16 +66,14 @@ func NewCircle() *Circle {
 
 func (c *Circle) Clockwise(n int) *Marble {
 	m := c.Current
-	for i := 0; i < n; i++ {
-		m = m.Next
-	}
-	return m
-}
-
-func (c *Circle) CounterClockwise(n int) *Marble {
-	m := c.Current
-	for i := 0; i < n; i++ {
-		m = m.Prev
+	if n < 0 {
+		for i := 0; i < -n; i++ {
+			m = m.Prev
+		}
+	} else {
+		for i := 0; i < n; i++ {
+			m = m.Next
+		}
 	}
 	return m
 }
@@ -103,7 +101,7 @@ func (c Circle) String() string {
 }
 
 func (c *Circle) Score(marble int) int {
-	m := c.CounterClockwise(7)
+	m := c.Clockwise(-7)
 	score := m.Num + marble
 	m.Delete()
 	c.Current = m.Next
