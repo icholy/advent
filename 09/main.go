@@ -8,8 +8,8 @@ import (
 )
 
 type Input struct {
-	NumPlayers       int
-	LastMarblePoints int
+	NumPlayers int
+	NumMarbles int
 }
 
 func ReadInput(file string) (Input, error) {
@@ -22,7 +22,7 @@ func ReadInput(file string) (Input, error) {
 	if _, err := fmt.Fscanf(f,
 		"%d players; last marble is worth %d points",
 		&input.NumPlayers,
-		&input.LastMarblePoints,
+		&input.NumMarbles,
 	); err != nil {
 		return input, err
 	}
@@ -34,10 +34,29 @@ type Marble struct {
 	Next *Marble // clockwise
 }
 
+func (m *Marble) InsertAfter(next *Marble) {
+	next.Next = m.Next
+	m.Next = next
+}
+
+func (m *Marble) Delete() {
+	*m = *m.Next
+}
+
 type Circle struct {
 	Size    int
 	First   *Marble
 	Current *Marble
+}
+
+func NewCircle() *Circle {
+	m := &Marble{Num: 0}
+	m.Next = m
+	return &Circle{
+		Size:    1,
+		First:   m,
+		Current: m,
+	}
 }
 
 func (c *Circle) Clockwise(n int) *Marble {
@@ -46,6 +65,10 @@ func (c *Circle) Clockwise(n int) *Marble {
 		m = m.Next
 	}
 	return m
+}
+
+func (c *Circle) CounterClockwise(n int) *Marble {
+	return c.Clockwise(c.Size - (n % c.Size))
 }
 
 func (c *Circle) Each(f func(*Marble)) {
@@ -58,7 +81,7 @@ func (c *Circle) Each(f func(*Marble)) {
 	}
 }
 
-func (c *Circle) String() string {
+func (c Circle) String() string {
 	var b strings.Builder
 	c.Each(func(m *Marble) {
 		if m == c.Current {
@@ -70,19 +93,19 @@ func (c *Circle) String() string {
 	return b.String()
 }
 
-func (c *Circle) Insert(marble int) {
+func (c *Circle) Score(marble int) int {
+	m := c.CounterClockwise(7)
+	score := m.Num
+	m.Delete()
+	c.Current = m
+	c.Size--
+	return score
+}
+
+func (c *Circle) Place(marble int) {
 	m := &Marble{Num: marble}
-	if c.Current == nil {
-		m.Next = m
-		c.Current = m
-		c.First = m
-	} else {
-		prev := c.Clockwise(1)
-		after := c.Clockwise(2)
-		prev.Next = m
-		m.Next = after
-		c.Current = m
-	}
+	c.Clockwise(1).InsertAfter(m)
+	c.Current = m
 	c.Size++
 }
 
@@ -92,4 +115,24 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("%#v\n", input)
+
+	var (
+		circle  = NewCircle()
+		players = make([]int, input.NumPlayers)
+	)
+
+	fmt.Printf("[-] %s\n", circle)
+	for i := 1; i <= input.NumMarbles; i++ {
+		player := i % input.NumPlayers
+		if i != 0 && i%23 == 0 {
+			players[player] += circle.Score(i)
+		} else {
+			circle.Place(i)
+		}
+		fmt.Printf("[player=%d, marble=%d] %s\n", player, i, circle)
+	}
+
+	for i, score := range players {
+		fmt.Printf("Player %d: %d\n", i, score)
+	}
 }
