@@ -95,7 +95,7 @@ func (c Circle) String() string {
 
 func (c *Circle) Score(marble int) int {
 	m := c.CounterClockwise(7)
-	score := m.Num
+	score := m.Num + marble
 	m.Delete()
 	c.Current = m
 	c.Size--
@@ -109,19 +109,11 @@ func (c *Circle) Place(marble int) {
 	c.Size++
 }
 
-func main() {
-	input, err := ReadInput("input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%#v\n", input)
-
+func PartOne(input Input) int {
 	var (
 		circle  = NewCircle()
 		players = make([]int, input.NumPlayers)
 	)
-
-	fmt.Printf("[-] %s\n", circle)
 	for i := 1; i <= input.NumMarbles; i++ {
 		player := i % input.NumPlayers
 		if i != 0 && i%23 == 0 {
@@ -129,10 +121,20 @@ func main() {
 		} else {
 			circle.Place(i)
 		}
-		fmt.Printf("[player=%d, marble=%d] %s\n", player, i, circle)
 	}
+	var max int
+	for _, score := range players {
+		if score > max {
+			max = score
+		}
+	}
+	return max
+}
 
-	for i, score := range players {
-		fmt.Printf("Player %d: %d\n", i, score)
+func main() {
+	input, err := ReadInput("input.txt")
+	if err != nil {
+		log.Fatal(err)
 	}
+	fmt.Printf("Answer (Part 1): %d\n", PartOne(input))
 }
