@@ -32,15 +32,19 @@ func ReadInput(file string) (Input, error) {
 type Marble struct {
 	Num  int
 	Next *Marble // clockwise
+	Prev *Marble
 }
 
 func (m *Marble) InsertAfter(next *Marble) {
+	next.Prev = m
 	next.Next = m.Next
+	m.Next.Prev = next
 	m.Next = next
 }
 
 func (m *Marble) Delete() {
-	*m = *m.Next
+	m.Next.Prev = m.Prev
+	m.Prev.Next = m.Next
 }
 
 type Circle struct {
@@ -52,6 +56,7 @@ type Circle struct {
 func NewCircle() *Circle {
 	m := &Marble{Num: 0}
 	m.Next = m
+	m.Prev = m
 	return &Circle{
 		Size:    1,
 		First:   m,
@@ -68,7 +73,11 @@ func (c *Circle) Clockwise(n int) *Marble {
 }
 
 func (c *Circle) CounterClockwise(n int) *Marble {
-	return c.Clockwise(c.Size - (n % c.Size))
+	m := c.Current
+	for i := 0; i < n; i++ {
+		m = m.Prev
+	}
+	return m
 }
 
 func (c *Circle) Each(f func(*Marble)) {
@@ -97,7 +106,7 @@ func (c *Circle) Score(marble int) int {
 	m := c.CounterClockwise(7)
 	score := m.Num + marble
 	m.Delete()
-	c.Current = m
+	c.Current = m.Next
 	c.Size--
 	return score
 }
