@@ -140,10 +140,34 @@ func PartOne(input Input) int {
 	return max
 }
 
+func PartTwo(input Input) int {
+	var (
+		circle  = NewCircle()
+		players = make([]int, input.NumPlayers)
+		marbles = 100 * input.NumMarbles
+	)
+	for i := 1; i <= marbles; i++ {
+		player := i % input.NumPlayers
+		if i != 0 && i%23 == 0 {
+			players[player] += circle.Score(i)
+		} else {
+			circle.Place(i)
+		}
+	}
+	var max int
+	for _, score := range players {
+		if score > max {
+			max = score
+		}
+	}
+	return max
+}
+
 func main() {
 	input, err := ReadInput("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Answer (Part 1): %d\n", PartOne(input))
+	fmt.Printf("Answer (Part 2): %d\n", PartTwo(input))
 }
