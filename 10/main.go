@@ -62,6 +62,18 @@ func ReadInput(file string) ([]Light, error) {
 	return lights, nil
 }
 
+func Bounds(lights []Light) image.Rectangle {
+	var b image.Rectangle
+	for i, l := range lights {
+		r := image.Rectangle{l.Pos, l.Pos}
+		if i == 0 {
+			b = r
+		}
+		b = b.Union(r)
+	}
+	return b
+}
+
 func Groups(lights []Light) [][]Light {
 	for i, l1 := range lights {
 		for j, l2 := range lights {
@@ -83,13 +95,11 @@ func Groups(lights []Light) [][]Light {
 }
 
 func Draw(lights []Light) error {
-	cv := draw.NewCanvas(40, 40)
-	center := image.Pt(cv.Width()/2, cv.Height()/2)
+	cv := draw.NewCanvas(300, 300)
 	cv.Draw(cv.Bounds().Fill(), '.')
 	for i, g := range Groups(lights) {
 		for _, l := range g {
-			p := l.Pos.Add(center)
-			cv.Draw(draw.FromImagePoint(p), 'A'+byte(i))
+			cv.Draw(draw.FromImagePoint(l.Pos), 'A'+byte(i))
 		}
 	}
 	return cv.WriteTo(os.Stdout)
@@ -104,11 +114,27 @@ func Simulate(lights []Light, seconds int) []Light {
 	return simulated
 }
 
+func PartOne(lights []Light) int {
+	var best [][]Light
+	var seconds int
+	for i := 0; i < 100000; i++ {
+		groups := Groups(Simulate(lights, i))
+		if i == 0 || len(groups) < len(best) {
+			best = groups
+			seconds = i
+		}
+	}
+	fmt.Println("best", len(best), "seconds", seconds)
+	return seconds
+}
+
 func main() {
 	lights, err := ReadInput("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
-	lights = Simulate(lights, 3)
+
+	lights = Simulate(lights, 10867)
+	fmt.Println(Bounds(lights))
 	Draw(lights)
 }
