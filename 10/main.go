@@ -88,6 +88,9 @@ func Search(lights []Light) int {
 }
 
 func Groups(lights []Light) [][]Light {
+	for _, l := range lights {
+		*l.Reaching = *disjoint.NewElement()
+	}
 	for i, l1 := range lights {
 		for j, l2 := range lights {
 			if i != j && l1.Touches(l2) {
