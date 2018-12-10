@@ -25,7 +25,7 @@ func Abs(x int) int {
 
 func (l Light) Touches(other Light) bool {
 	delta := l.Pos.Sub(other.Pos)
-	return Abs(delta.X)+Abs(delta.Y) <= 2
+	return Abs(delta.X) <= 1 && Abs(delta.Y) <= 1
 }
 
 func (l Light) Position(seconds int) image.Point {
