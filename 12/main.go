@@ -47,15 +47,15 @@ type Input struct {
 	Rules []Rule
 }
 
-func ParseState(s string) ([]Pot, error) {
-	var state []Pot
+func ParsePots(s string) ([]Pot, error) {
+	var pots []Pot
 	for _, c := range s {
 		if c != '#' && c != '.' {
-			return nil, fmt.Errorf("invalid state char: %q", c)
+			return nil, fmt.Errorf("invalid pot char: %q", c)
 		}
-		state = append(state, c == '#')
+		pots = append(pots, c == '#')
 	}
-	return state, nil
+	return pots, nil
 }
 
 func ReadInput(file string) (*Input, error) {
@@ -74,7 +74,7 @@ func ReadInput(file string) (*Input, error) {
 	if _, err := fmt.Sscanf(sc.Text(), "initial state: %s", &initial); err != nil {
 		return nil, fmt.Errorf("failed to scan initial state: %v", err)
 	}
-	state, err := ParseState(initial)
+	state, err := ParsePots(initial)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse initial state: %v", err)
 	}
@@ -92,7 +92,7 @@ func ReadInput(file string) (*Input, error) {
 			return nil, fmt.Errorf("failed to scan rule: %v", err)
 		}
 		var rule Rule
-		rule.Pattern, err = ParseState(pattern)
+		rule.Pattern, err = ParsePots(pattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse rule pattern: %v", err)
 		}
@@ -110,6 +110,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println(Format(input.State))
 	for _, r := range input.Rules {
 		fmt.Println(r)
 	}
