@@ -13,18 +13,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tunnel := NewTunnel(100)
+	tunnel := NewTunnel(100000)
 	tunnel.Init(input.State)
-	tunnel.Min = -5
-
-	fmt.Printf("01 %s\n", tunnel)
 
 	for i := 0; i < 20; i++ {
 		tunnel = tunnel.Apply(input.Rules...)
-		tunnel.Min = -5
-		fmt.Printf("%02d %s\n", i+1, tunnel)
 	}
 
+	fmt.Println(tunnel.Min, tunnel.Max)
 	fmt.Println(tunnel.PlantNumSum())
 }
 
