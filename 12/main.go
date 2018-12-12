@@ -8,6 +8,24 @@ import (
 	"strings"
 )
 
+func main() {
+	input, err := ReadInput("input.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tunnel := NewTunnel(50)
+	tunnel.Init(input.State)
+	tunnel.Min = -5
+
+	fmt.Printf("01 %s\n", tunnel)
+
+	for i := 0; i < 20; i++ {
+		tunnel = tunnel.Apply(input.Rules...)
+		tunnel.Min = -5
+		fmt.Printf("%02d %s\n", i+1, tunnel)
+	}
+}
+
 type Pot bool
 
 func Format(pp []Pot) string {
@@ -19,12 +37,12 @@ func Format(pp []Pot) string {
 }
 
 type Tunnel struct {
-	Zero, Min, Max int
+	Size, Min, Max int
 	Pots           []Pot
 }
 
 func (t Tunnel) At(i int) Pot {
-	return t.Pots[t.Zero+i]
+	return t.Pots[t.Size+i]
 }
 
 func (t *Tunnel) SetAt(i int, p Pot) {
@@ -34,22 +52,38 @@ func (t *Tunnel) SetAt(i int, p Pot) {
 	if i > t.Max {
 		t.Max = i
 	}
-	t.Pots[t.Zero+i] = p
+	t.Pots[t.Size+i] = p
 }
 
 func (t Tunnel) String() string {
-	return Format(t.Pots[t.Zero+t.Min : t.Zero+t.Max])
+	return Format(t.Pots[t.Size+t.Min : t.Size+t.Max+1])
 }
 
 func (t *Tunnel) Init(pots []Pot) {
 	for i, p := range pots {
-		t.SetAt(i, p)
+		if p {
+			t.SetAt(i, p)
+		}
 	}
+}
+
+func (t *Tunnel) Apply(rules ...Rule) Tunnel {
+	next := NewTunnel(t.Size)
+	// next.Init(t.Pots)
+	for i := 0; i < len(t.Pots)-5; i++ {
+		center := (i + 2) - t.Size
+		for _, r := range rules {
+			if r.Matches(t.Pots, i) {
+				next.SetAt(center, r.To)
+			}
+		}
+	}
+	return next
 }
 
 func NewTunnel(size int) Tunnel {
 	return Tunnel{
-		Zero: size,
+		Size: size,
 		Pots: make([]Pot, 2*size),
 	}
 }
@@ -70,21 +104,13 @@ func (r Rule) String() string {
 	return fmt.Sprintf("%s => %s", Format(r.Pattern), r.To)
 }
 
-func (r Rule) Matches(state []Pot, offset int) bool {
+func (r Rule) Matches(pots []Pot, offset int) bool {
 	for i, p := range r.Pattern {
-		if state[offset+i] != p {
+		if pots[offset+i] != p {
 			return false
 		}
 	}
 	return true
-}
-
-func (r Rule) Update(dst, src []Pot) {
-	for i := 0; i < len(src)-5; i++ {
-		if r.Matches(src, i) {
-			dst[i+2] = true
-		}
-	}
 }
 
 type Input struct {
@@ -148,16 +174,4 @@ func ReadInput(file string) (*Input, error) {
 		return nil, err
 	}
 	return &Input{state, rules}, nil
-}
-
-func main() {
-	input, err := ReadInput("input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tunnel := NewTunnel(50)
-	tunnel.Init(input.State)
-
-	fmt.Println(tunnel)
 }
