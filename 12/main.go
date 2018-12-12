@@ -10,6 +10,14 @@ import (
 
 type Pot bool
 
+func Format(pp []Pot) string {
+	var pattern strings.Builder
+	for _, p := range pp {
+		pattern.WriteString(p.String())
+	}
+	return pattern.String()
+}
+
 func (p Pot) String() string {
 	if p {
 		return "#"
@@ -18,24 +26,20 @@ func (p Pot) String() string {
 }
 
 type Rule struct {
-	From []Pot
-	To   Pot
+	Pattern []Pot
+	To      Pot
 }
 
 func (r Rule) String() string {
-	var from strings.Builder
-	for _, p := range r.From {
-		from.WriteString(p.String())
-	}
-	return fmt.Sprintf("%s => %s", &from, r.To)
+	return fmt.Sprintf("%s => %s", Format(r.Pattern), r.To)
 }
 
 func (r Rule) Matches(state []Pot, center int) bool {
-	return state[center-2] == r.From[0] &&
-		state[center-1] == r.From[1] &&
-		state[center] == r.From[2] &&
-		state[center+1] == r.From[3] &&
-		state[center+2] == r.From[4]
+	return state[center-2] == r.Pattern[0] &&
+		state[center-1] == r.Pattern[1] &&
+		state[center] == r.Pattern[2] &&
+		state[center+1] == r.Pattern[3] &&
+		state[center+2] == r.Pattern[4]
 }
 
 type Input struct {
@@ -83,14 +87,14 @@ func ReadInput(file string) (*Input, error) {
 	// read the rules
 	var rules []Rule
 	for sc.Scan() {
-		var from, to string
-		if _, err := fmt.Sscanf(sc.Text(), "%s => %s", &from, &to); err != nil {
+		var pattern, to string
+		if _, err := fmt.Sscanf(sc.Text(), "%s => %s", &pattern, &to); err != nil {
 			return nil, fmt.Errorf("failed to scan rule: %v", err)
 		}
 		var rule Rule
-		rule.From, err = ParseState(from)
+		rule.Pattern, err = ParseState(pattern)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse rule from: %v", err)
+			return nil, fmt.Errorf("failed to parse rule pattern: %v", err)
 		}
 		rule.To = to == "#"
 		rules = append(rules, rule)
