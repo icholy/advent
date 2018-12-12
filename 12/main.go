@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tunnel := NewTunnel(50)
+	tunnel := NewTunnel(100)
 	tunnel.Init(input.State)
 	tunnel.Min = -5
 
@@ -24,6 +24,8 @@ func main() {
 		tunnel.Min = -5
 		fmt.Printf("%02d %s\n", i+1, tunnel)
 	}
+
+	fmt.Println(tunnel.PlantNumSum())
 }
 
 type Pot bool
@@ -39,6 +41,22 @@ func Format(pp []Pot) string {
 type Tunnel struct {
 	Size, Min, Max int
 	Pots           []Pot
+}
+
+func (t Tunnel) Range(f func(int, Pot)) {
+	for i := -t.Size; i < t.Size; i++ {
+		f(i, t.At(i))
+	}
+}
+
+func (t Tunnel) PlantNumSum() int {
+	var sum int
+	t.Range(func(i int, p Pot) {
+		if p {
+			sum += i
+		}
+	})
+	return sum
 }
 
 func (t Tunnel) At(i int) Pot {
