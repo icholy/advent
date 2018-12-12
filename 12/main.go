@@ -18,6 +18,42 @@ func Format(pp []Pot) string {
 	return pattern.String()
 }
 
+type Tunnel struct {
+	Zero, Min, Max int
+	Pots           []Pot
+}
+
+func (t Tunnel) At(i int) Pot {
+	return t.Pots[t.Zero+i]
+}
+
+func (t *Tunnel) SetAt(i int, p Pot) {
+	if i < t.Min {
+		t.Min = i
+	}
+	if i > t.Max {
+		t.Max = i
+	}
+	t.Pots[t.Zero+i] = p
+}
+
+func (t Tunnel) String() string {
+	return Format(t.Pots[t.Zero+t.Min : t.Zero+t.Max])
+}
+
+func (t *Tunnel) Init(pots []Pot) {
+	for i, p := range pots {
+		t.SetAt(i, p)
+	}
+}
+
+func NewTunnel(size int) Tunnel {
+	return Tunnel{
+		Zero: size,
+		Pots: make([]Pot, 2*size),
+	}
+}
+
 func (p Pot) String() string {
 	if p {
 		return "#"
@@ -120,14 +156,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	prev := input.State
-	next := make([]Pot, len(prev))
+	tunnel := NewTunnel(50)
+	tunnel.Init(input.State)
 
-	for _, r := range input.Rules {
-		fmt.Println(r)
-		r.Update(next, prev)
-	}
-
-	fmt.Println(Format(input.State))
-	fmt.Println(Format(next))
+	fmt.Println(tunnel)
 }
