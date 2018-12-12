@@ -34,12 +34,21 @@ func (r Rule) String() string {
 	return fmt.Sprintf("%s => %s", Format(r.Pattern), r.To)
 }
 
-func (r Rule) Matches(state []Pot, center int) bool {
-	return state[center-2] == r.Pattern[0] &&
-		state[center-1] == r.Pattern[1] &&
-		state[center] == r.Pattern[2] &&
-		state[center+1] == r.Pattern[3] &&
-		state[center+2] == r.Pattern[4]
+func (r Rule) Matches(state []Pot, offset int) bool {
+	for i, p := range r.Pattern {
+		if state[offset+i] != p {
+			return false
+		}
+	}
+	return true
+}
+
+func (r Rule) Update(dst, src []Pot) {
+	for i := 0; i < len(src)-5; i++ {
+		if r.Matches(src, i) {
+			dst[i+2] = true
+		}
+	}
 }
 
 type Input struct {
@@ -110,8 +119,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(Format(input.State))
+
+	prev := input.State
+	next := make([]Pot, len(prev))
+
 	for _, r := range input.Rules {
 		fmt.Println(r)
+		r.Update(next, prev)
 	}
+
+	fmt.Println(Format(input.State))
+	fmt.Println(Format(next))
 }
