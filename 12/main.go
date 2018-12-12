@@ -20,7 +20,6 @@ func main() {
 		tunnel = tunnel.Apply(input.Rules...)
 	}
 
-	fmt.Println(tunnel.Min, tunnel.Max)
 	fmt.Println(tunnel.PlantNumSum())
 }
 
