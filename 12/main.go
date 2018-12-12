@@ -5,20 +5,46 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
+type Pot bool
+
+func (p Pot) String() string {
+	if p {
+		return "#"
+	}
+	return "."
+}
+
 type Rule struct {
-	From []bool
-	To   bool
+	From []Pot
+	To   Pot
+}
+
+func (r Rule) String() string {
+	var from strings.Builder
+	for _, p := range r.From {
+		from.WriteString(p.String())
+	}
+	return fmt.Sprintf("%s => %s", &from, r.To)
+}
+
+func (r Rule) Matches(state []Pot, center int) bool {
+	return state[center-2] == r.From[0] &&
+		state[center-1] == r.From[1] &&
+		state[center] == r.From[2] &&
+		state[center+1] == r.From[3] &&
+		state[center+2] == r.From[4]
 }
 
 type Input struct {
-	State []bool
+	State []Pot
 	Rules []Rule
 }
 
-func ParseState(s string) ([]bool, error) {
-	var state []bool
+func ParseState(s string) ([]Pot, error) {
+	var state []Pot
 	for _, c := range s {
 		if c != '#' && c != '.' {
 			return nil, fmt.Errorf("invalid state char: %q", c)
@@ -54,6 +80,7 @@ func ReadInput(file string) (*Input, error) {
 		return nil, fmt.Errorf("missing blank line")
 	}
 
+	// read the rules
 	var rules []Rule
 	for sc.Scan() {
 		var from, to string
@@ -79,5 +106,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Input", input)
+	for _, r := range input.Rules {
+		fmt.Println(r)
+	}
 }
