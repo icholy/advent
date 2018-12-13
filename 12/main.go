@@ -18,7 +18,7 @@ func main() {
 
 	PrintTunnel(1, tunnel)
 
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 3000; i++ {
 		tunnel = tunnel.Apply(input.Rules...)
 		PrintTunnel(i+1, tunnel)
 	}
@@ -27,7 +27,7 @@ func main() {
 }
 
 func PrintTunnel(gen int, t *Tunnel) {
-	fmt.Printf("%2d: %s\n", gen, t.RangeString(-2, 40))
+	fmt.Printf("%2d: %s\n", gen, t.Shape())
 }
 
 type Pot bool
@@ -41,8 +41,9 @@ func Format(pp []Pot) string {
 }
 
 type Tunnel struct {
-	Min, Max int
-	Pots     map[int]Pot
+	Initialized bool
+	Min, Max    int
+	Pots        map[int]Pot
 }
 
 func (t *Tunnel) Range(min, max int, f func(int, Pot)) {
@@ -53,12 +54,11 @@ func (t *Tunnel) Range(min, max int, f func(int, Pot)) {
 
 func (t *Tunnel) PlantNumSum() int {
 	var sum int
-	for i, p := range t.Pots {
-		if !p {
-			panic("what")
+	t.Range(t.Min, t.Max, func(i int, p Pot) {
+		if p {
+			sum += i
 		}
-		sum += i
-	}
+	})
 	return sum
 }
 
@@ -67,6 +67,11 @@ func (t *Tunnel) At(i int) Pot {
 }
 
 func (t *Tunnel) SetAt(i int, p Pot) {
+	if !t.Initialized {
+		t.Min = i
+		t.Max = i
+		t.Initialized = true
+	}
 	if i < t.Min {
 		t.Min = i
 	}
@@ -86,6 +91,32 @@ func (t *Tunnel) RangeString(min, max int) string {
 		s.WriteString(p.String())
 	})
 	return s.String()
+}
+
+func (t *Tunnel) Extents() (min, max int) {
+	var initialized bool
+	t.Range(t.Min, t.Max, func(i int, p Pot) {
+		if !p {
+			return
+		}
+		if !initialized {
+			max = i
+			min = i
+			initialized = true
+		}
+		if i > max {
+			max = i
+		}
+		if i < min {
+			min = i
+		}
+	})
+	return min, max
+}
+
+func (t *Tunnel) Shape() string {
+	min, max := t.Extents()
+	return t.RangeString(min-10, max+10)
 }
 
 func (t *Tunnel) String() string {
