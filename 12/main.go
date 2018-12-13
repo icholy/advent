@@ -13,14 +13,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tunnel := NewTunnel(100000)
+	tunnel := NewTunnel()
 	tunnel.Init(input.State)
+
+	PrintTunnel(1, tunnel)
 
 	for i := 0; i < 20; i++ {
 		tunnel = tunnel.Apply(input.Rules...)
+		PrintTunnel(i+1, tunnel)
 	}
 
 	fmt.Println(tunnel.PlantNumSum())
+}
+
+func PrintTunnel(gen int, t *Tunnel) {
+	fmt.Printf("%2d: %s\n", gen, t.RangeString(-2, 40))
 }
 
 type Pot bool
@@ -34,28 +41,29 @@ func Format(pp []Pot) string {
 }
 
 type Tunnel struct {
-	Size, Min, Max int
-	Pots           []Pot
+	Min, Max int
+	Pots     map[int]Pot
 }
 
-func (t Tunnel) Range(f func(int, Pot)) {
-	for i := -t.Size; i < t.Size; i++ {
+func (t *Tunnel) Range(min, max int, f func(int, Pot)) {
+	for i := min; i <= max; i++ {
 		f(i, t.At(i))
 	}
 }
 
-func (t Tunnel) PlantNumSum() int {
+func (t *Tunnel) PlantNumSum() int {
 	var sum int
-	t.Range(func(i int, p Pot) {
-		if p {
-			sum += i
+	for i, p := range t.Pots {
+		if !p {
+			panic("what")
 		}
-	})
+		sum += i
+	}
 	return sum
 }
 
-func (t Tunnel) At(i int) Pot {
-	return t.Pots[t.Size+i]
+func (t *Tunnel) At(i int) Pot {
+	return t.Pots[i]
 }
 
 func (t *Tunnel) SetAt(i int, p Pot) {
@@ -65,11 +73,23 @@ func (t *Tunnel) SetAt(i int, p Pot) {
 	if i > t.Max {
 		t.Max = i
 	}
-	t.Pots[t.Size+i] = p
+	if p {
+		t.Pots[i] = p
+	} else {
+		delete(t.Pots, i)
+	}
 }
 
-func (t Tunnel) String() string {
-	return Format(t.Pots[t.Size+t.Min : t.Size+t.Max+1])
+func (t *Tunnel) RangeString(min, max int) string {
+	var s strings.Builder
+	t.Range(min, max, func(_ int, p Pot) {
+		s.WriteString(p.String())
+	})
+	return s.String()
+}
+
+func (t *Tunnel) String() string {
+	return t.RangeString(t.Min, t.Max)
 }
 
 func (t *Tunnel) Init(pots []Pot) {
@@ -80,24 +100,21 @@ func (t *Tunnel) Init(pots []Pot) {
 	}
 }
 
-func (t *Tunnel) Apply(rules ...Rule) Tunnel {
-	next := NewTunnel(t.Size)
-	// next.Init(t.Pots)
-	for i := 0; i < len(t.Pots)-5; i++ {
-		center := (i + 2) - t.Size
+func (t *Tunnel) Apply(rules ...Rule) *Tunnel {
+	next := NewTunnel()
+	t.Range(t.Min-2, t.Max+2, func(center int, p Pot) {
 		for _, r := range rules {
-			if r.Matches(t.Pots, i) {
+			if r.Matches(t, center) {
 				next.SetAt(center, r.To)
 			}
 		}
-	}
+	})
 	return next
 }
 
-func NewTunnel(size int) Tunnel {
-	return Tunnel{
-		Size: size,
-		Pots: make([]Pot, 2*size),
+func NewTunnel() *Tunnel {
+	return &Tunnel{
+		Pots: map[int]Pot{},
 	}
 }
 
@@ -117,13 +134,12 @@ func (r Rule) String() string {
 	return fmt.Sprintf("%s => %s", Format(r.Pattern), r.To)
 }
 
-func (r Rule) Matches(pots []Pot, offset int) bool {
-	for i, p := range r.Pattern {
-		if pots[offset+i] != p {
-			return false
-		}
-	}
-	return true
+func (r Rule) Matches(t *Tunnel, center int) bool {
+	return t.At(center-2) == r.Pattern[0] &&
+		t.At(center-1) == r.Pattern[1] &&
+		t.At(center) == r.Pattern[2] &&
+		t.At(center+1) == r.Pattern[3] &&
+		t.At(center+2) == r.Pattern[4]
 }
 
 type Input struct {
@@ -179,6 +195,9 @@ func ReadInput(file string) (*Input, error) {
 		rule.Pattern, err = ParsePots(pattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse rule pattern: %v", err)
+		}
+		if len(rule.Pattern) != 5 {
+			return nil, fmt.Errorf("expected rule pattern to be 5 pots long, got %d", len(rule.Pattern))
 		}
 		rule.To = to == "#"
 		rules = append(rules, rule)
