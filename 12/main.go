@@ -116,7 +116,7 @@ func (t *Tunnel) Extents() (min, max int) {
 
 func (t *Tunnel) Shape() string {
 	min, max := t.Extents()
-	return t.RangeString(min-10, max+10)
+	return t.RangeString(min, max)
 }
 
 func (t *Tunnel) String() string {
