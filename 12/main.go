@@ -13,32 +13,37 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tunnel := NewTunnel()
-	tunnel.Init(input.State)
 
-	PrintTunnel(1, tunnel)
-
-	for i := 0; i < 3000; i++ {
-		tunnel = tunnel.Apply(input.Rules...)
-		PrintTunnel(i+1, tunnel)
-	}
-
-	fmt.Println(tunnel.PlantNumSum())
+	fmt.Printf("Answer (Part 1): %d\n", PartOne(input))
+	fmt.Printf("Answer (Part 2): %d\n", PartTwo())
 }
 
-func PrintTunnel(gen int, t *Tunnel) {
-	fmt.Printf("%2d: %s\n", gen, t.Shape())
+func PartOne(input *Input) int {
+	tunnel := NewTunnel()
+	tunnel.Init(input.State)
+	for i := 0; i < 20; i++ {
+		tunnel = tunnel.Apply(input.Rules...)
+	}
+	return tunnel.PlantNumSum()
+}
+
+// after 100 iterations this shape keeps repeating. We can use this to compute the n-th generation.
+const RepeatingShape = "#..##..#..#..##..#..#..##..#..#..##..#..#..##..#..#..##..#..#..##..#..#..##..#..#..##..#..#..##..#..#..##..##....#..##..##..##..#..#..##....#..##"
+
+func PartTwo() int {
+	gen := 50000000000
+	pots, err := ParsePots(RepeatingShape)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tunnel := NewTunnel()
+	for i, p := range pots {
+		tunnel.SetAt(gen+i-45, p)
+	}
+	return tunnel.PlantNumSum()
 }
 
 type Pot bool
-
-func Format(pp []Pot) string {
-	var pattern strings.Builder
-	for _, p := range pp {
-		pattern.WriteString(p.String())
-	}
-	return pattern.String()
-}
 
 type Tunnel struct {
 	Initialized bool
@@ -162,7 +167,11 @@ type Rule struct {
 }
 
 func (r Rule) String() string {
-	return fmt.Sprintf("%s => %s", Format(r.Pattern), r.To)
+	var pattern strings.Builder
+	for _, p := range r.Pattern {
+		pattern.WriteString(p.String())
+	}
+	return fmt.Sprintf("%s => %s", pattern.String(), r.To)
 }
 
 func (r Rule) Matches(t *Tunnel, center int) bool {
