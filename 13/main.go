@@ -20,7 +20,7 @@ func main() {
 	if err := sim.Validate(); err != nil {
 		log.Fatal(err)
 	}
-	for sim.NumCarts > 1 {
+	for sim.NumCarts() > 1 {
 		sim.Tick()
 	}
 	fmt.Printf("Answer (Part One): %s\n", sim.Collisions[0])
@@ -282,7 +282,6 @@ type Simulation struct {
 	Tracks     []*Track
 	Collisions []image.Point
 	Occupied   map[image.Point]*Cart
-	NumCarts   int
 }
 
 func NewSimulation(tracks []*Track) *Simulation {
@@ -300,8 +299,11 @@ func NewSimulation(tracks []*Track) *Simulation {
 	for _, c := range sim.Carts {
 		sim.Occupied[c.Position] = c
 	}
-	sim.NumCarts = len(sim.Carts)
 	return sim
+}
+
+func (sim *Simulation) NumCarts() int {
+	return len(sim.Occupied)
 }
 
 func (sim *Simulation) OtherTrack(c *Cart) (*Track, bool) {
@@ -339,7 +341,6 @@ func (sim *Simulation) Tick() int {
 			other.Crashed = true
 			sim.Collisions = append(sim.Collisions, c.Position)
 			delete(sim.Occupied, c.Position)
-			sim.NumCarts -= 2
 		} else {
 			sim.Occupied[c.Position] = c
 		}
