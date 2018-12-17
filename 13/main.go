@@ -317,18 +317,16 @@ func (sim *Simulation) OtherTrack(c *Cart) (*Track, bool) {
 	return nil, false
 }
 
-func (sim *Simulation) Tick() int {
+func (sim *Simulation) Tick() {
 	sort.Slice(sim.Carts, func(i, j int) bool {
 		return sim.Carts[i].LessThan(sim.Carts[j])
 	})
 
-	var changes int
 	for _, c := range sim.Carts {
 
 		if c.Crashed {
 			continue
 		}
-		changes++
 
 		delete(sim.Occupied, c.Position)
 		if t, ok := sim.OtherTrack(c); ok {
@@ -345,7 +343,6 @@ func (sim *Simulation) Tick() int {
 			sim.Occupied[c.Position] = c
 		}
 	}
-	return changes
 }
 
 func (sim *Simulation) TickN(n int) {
